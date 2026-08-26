@@ -37,6 +37,7 @@ istio:
     host: "*"                # accept requests for any hostname
 
   virtualservice:
+    pathPrefix: /demo        # URL prefix — Istio rewrites to / before forwarding
     timeout: "10s"           # total request timeout
     retries:
       attempts: 3            # retry failed requests up to 3 times

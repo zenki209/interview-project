@@ -9,7 +9,12 @@ spec:
   gateways:
   - {{ .Release.Name }}-gateway
   http:
-  - timeout: {{ .Values.istio.virtualservice.timeout }}
+  - match:
+    - uri:
+        prefix: {{ .Values.istio.virtualservice.pathPrefix }}
+    rewrite:
+      uri: /                 # strip the prefix before forwarding to the app
+    timeout: {{ .Values.istio.virtualservice.timeout }}
     retries:
       attempts: {{ .Values.istio.virtualservice.retries.attempts }}
       perTryTimeout: {{ .Values.istio.virtualservice.retries.perTryTimeout }}

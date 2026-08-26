@@ -94,16 +94,15 @@ EOF
   kubectl get pods -n istio-system
 }
 
-# ─── Namespace ────────────────────────────────────────────────────────────────
-setup_namespace() {
-  log_section "Configuring Namespace '${NAMESPACE}'"
+# ─── Namespaces ───────────────────────────────────────────────────────────────
+setup_namespaces() {
+  log_section "Configuring Namespaces"
 
-  kubectl create namespace "${NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f -
-
-  # Istio will automatically inject an Envoy sidecar into every pod in this namespace
-  kubectl label namespace "${NAMESPACE}" istio-injection=enabled --overwrite
-
-  log_info "Namespace '${NAMESPACE}' ready with sidecar injection enabled."
+  for ns in "${NAMESPACE_DEMO}" "${NAMESPACE_MS}"; do
+    kubectl create namespace "${ns}" --dry-run=client -o yaml | kubectl apply -f -
+    kubectl label namespace "${ns}" istio-injection=enabled --overwrite
+    log_info "Namespace '${ns}' ready with sidecar injection enabled."
+  done
 }
 
 # ─── Summary ──────────────────────────────────────────────────────────────────
@@ -116,12 +115,12 @@ print_summary() {
 
   echo "  Istio ingress gateway : http://$(minikube ip):${ingress_port}"
   echo ""
-  echo "  Traffic flow:"
-  echo "    Browser → Istio IngressGateway (NodePort ${ingress_port})"
-  echo "    → Istio Gateway resource → VirtualService routing"
-  echo "    → Service (ClusterIP) → Envoy sidecar → Flask pod"
+  echo "  Namespaces:"
+  echo "    ${NAMESPACE_DEMO}   — standalone Python demo app  (./03-deploy-app.sh)"
+  echo "    ${NAMESPACE_MS}  — full microservices topology  (./05-deploy-microservices.sh)"
   echo ""
-  log_info "Next step: run ./03-deploy-app.sh"
+  echo "  IngressGateway : http://$(minikube ip):${ingress_port}"
+  echo "  Next steps     : ./03-deploy-app.sh  and/or  ./05-deploy-microservices.sh"
 }
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
@@ -133,5 +132,5 @@ echo -e "${BLUE}█████████████████████�
 check_cluster
 install_helm
 install_istio
-setup_namespace
+setup_namespaces
 print_summary

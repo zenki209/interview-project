@@ -89,13 +89,13 @@ helm_deploy() {
   log_section "Helm Deploy — microservices (v1=${V1_WEIGHT}% v2=${V2_WEIGHT}%)"
 
   # Remove old single-app release if present (it owns the Gateway for host:"*")
-  if helm status demo-python-app -n "${NAMESPACE}" &>/dev/null 2>&1; then
+  if helm status demo-python-app -n "${NAMESPACE_MS}" &>/dev/null 2>&1; then
     log_info "Removing old demo-python-app release..."
-    helm uninstall demo-python-app -n "${NAMESPACE}"
+    helm uninstall demo-python-app -n "${NAMESPACE_MS}"
   fi
 
   helm upgrade --install "${HELM_RELEASE_MS}" "${CHART_DIR}" \
-    --namespace "${NAMESPACE}" \
+    --namespace "${NAMESPACE_MS}" \
     --set reviewService.traffic.v1Weight="${V1_WEIGHT}" \
     --set reviewService.traffic.v2Weight="${V2_WEIGHT}" \
     --wait \
@@ -103,7 +103,7 @@ helm_deploy() {
 
   echo ""
   log_info "Helm release:"
-  helm status "${HELM_RELEASE_MS}" -n "${NAMESPACE}" | grep -E "STATUS|DEPLOYED|NAMESPACE|REVISION"
+  helm status "${HELM_RELEASE_MS}" -n "${NAMESPACE_MS}" | grep -E "STATUS|DEPLOYED|NAMESPACE|REVISION"
 }
 
 # ─── Summary ──────────────────────────────────────────────────────────────────
@@ -127,17 +127,17 @@ print_summary() {
   printf "  %-10s %s\n" "App:"   "http://${minikube_ip}:${ingress_port}"
   printf "  %-10s %s\n" "Kiali:" "http://${minikube_ip}:${kiali_port}"
   echo ""
-  echo "  Pods in namespace '${NAMESPACE}':"
-  kubectl get pods -n "${NAMESPACE}" -o wide
+  echo "  Pods in namespace '${NAMESPACE_MS}':"
+  kubectl get pods -n "${NAMESPACE_MS}" -o wide
   echo ""
   echo "  Adjust traffic split (no rebuild needed):"
-  echo "    helm upgrade ${HELM_RELEASE_MS} ${CHART_DIR} -n ${NAMESPACE} \\"
+  echo "    helm upgrade ${HELM_RELEASE_MS} ${CHART_DIR} -n ${NAMESPACE_MS} \\"
   echo "      --set reviewService.traffic.v1Weight=50 \\"
   echo "      --set reviewService.traffic.v2Weight=50"
   echo ""
   echo "  Istio commands:"
   echo "    istioctl proxy-status"
-  echo "    kubectl get vs,dr,gateway -n ${NAMESPACE}"
+  echo "    kubectl get vs,dr,gateway -n ${NAMESPACE_MS}"
   echo ""
 
   # Generate warm-up traffic so Kiali graph populates immediately

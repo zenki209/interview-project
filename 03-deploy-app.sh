@@ -154,7 +154,7 @@ helm_deploy() {
   log_section "Helm Deploy — ${HELM_RELEASE} (replicas=${REPLICAS})"
 
   helm upgrade --install "${HELM_RELEASE}" "${HELM_CHART_DIR}" \
-    --namespace "${NAMESPACE}" \
+    --namespace "${NAMESPACE_DEMO}" \
     --set replicaSet.replicas="${REPLICAS}" \
     --set image.name="${APP_IMAGE%%:*}" \
     --set image.tag="${APP_IMAGE##*:}" \
@@ -163,11 +163,11 @@ helm_deploy() {
 
   echo ""
   log_info "Helm release status:"
-  helm status "${HELM_RELEASE}" -n "${NAMESPACE}" | grep -E "STATUS|DEPLOYED|NAMESPACE"
+  helm status "${HELM_RELEASE}" -n "${NAMESPACE_DEMO}" | grep -E "STATUS|DEPLOYED|NAMESPACE"
 
   echo ""
   log_info "Pods (each has 2 containers: app + istio-proxy sidecar):"
-  kubectl get pods -n "${NAMESPACE}" -o wide
+  kubectl get pods -n "${NAMESPACE_DEMO}" -o wide
 }
 
 # ─── Summary ──────────────────────────────────────────────────────────────────
@@ -177,23 +177,23 @@ print_summary() {
   local ingress_port
   ingress_port=$(kubectl -n istio-system get service istio-ingressgateway \
     -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}')
-  local app_url="http://$(minikube ip):${ingress_port}"
+  local app_url="http://$(minikube ip):${ingress_port}/demo"
 
-  echo -e "  ${GREEN}App URL:${NC}  ${app_url}"
+  echo -e "  ${GREEN}App URL:${NC}  ${app_url}  (namespace: ${NAMESPACE_DEMO})"
   echo ""
   echo "  Scale replicas:"
   echo "    ./03-deploy-app.sh --replicas 4"
-  echo "    helm upgrade ${HELM_RELEASE} ./helm-chart/demo-python-app -n ${NAMESPACE} --set replicaSet.replicas=4"
+  echo "    helm upgrade ${HELM_RELEASE} ./helm-chart/demo-python-app -n ${NAMESPACE_DEMO} --set replicaSet.replicas=4"
   echo ""
   echo "  Istio traffic commands:"
   echo "    istioctl proxy-status                             # Envoy sync status"
-  echo "    istioctl analyze -n ${NAMESPACE}                  # Config health check"
-  echo "    kubectl get virtualservice,gateway,destinationrule -n ${NAMESPACE}"
+  echo "    istioctl analyze -n ${NAMESPACE_DEMO}                  # Config health check"
+  echo "    kubectl get virtualservice,gateway,destinationrule -n ${NAMESPACE_DEMO}"
   echo ""
   echo "  Helm commands:"
-  echo "    helm list -n ${NAMESPACE}                         # List releases"
-  echo "    helm history ${HELM_RELEASE} -n ${NAMESPACE}      # Rollout history"
-  echo "    helm rollback ${HELM_RELEASE} -n ${NAMESPACE}     # Roll back one version"
+  echo "    helm list -n ${NAMESPACE_DEMO}                         # List releases"
+  echo "    helm history ${HELM_RELEASE} -n ${NAMESPACE_DEMO}      # Rollout history"
+  echo "    helm rollback ${HELM_RELEASE} -n ${NAMESPACE_DEMO}     # Roll back one version"
   echo ""
 
   if command -v xdg-open &>/dev/null; then

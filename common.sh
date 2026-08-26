@@ -17,7 +17,8 @@ CLUSTER_NODES=2          # 1 control-plane + 1 worker
 CPUS_PER_NODE=2
 MEMORY_PER_NODE=2048     # MB
 DISK_SIZE=20g
-NAMESPACE="dev"
+NAMESPACE_DEMO="dev-python-demo"   # standalone Flask demo app
+NAMESPACE_MS="dev-microservices"   # full microservices topology
 APP_IMAGE="demo-python-app:latest"
 APP_DIR="/tmp/demo-python-app"
 
