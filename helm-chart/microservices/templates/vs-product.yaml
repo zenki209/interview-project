@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: product-service
+  namespace: {{ .Release.Namespace }}
+spec:
+  hosts:
+  - product-service
+  http:
+  - timeout: {{ .Values.productService.istio.timeout }}
+    retries:
+      attempts: {{ .Values.productService.istio.retries.attempts }}
+      perTryTimeout: {{ .Values.productService.istio.retries.perTryTimeout }}
+      retryOn: "5xx,reset,connect-failure"
+    route:
+    - destination:
+        host: product-service
+        port:
+          number: 80

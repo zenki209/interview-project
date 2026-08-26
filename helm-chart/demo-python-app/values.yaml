@@ -1,0 +1,53 @@
+# ── ReplicaSet ────────────────────────────────────────────────────────────────
+# The Deployment manages a ReplicaSet that keeps this many pods running.
+# Rolling update strategy controls how pods are replaced during an upgrade.
+replicaSet:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1        # max extra pods above desired count during rollout
+      maxUnavailable: 0  # min pods always running (zero-downtime rollout)
+
+# ── Image ─────────────────────────────────────────────────────────────────────
+image:
+  name: demo-python-app
+  tag: latest
+  pullPolicy: Never          # image is loaded directly into minikube, no registry
+
+# ── Service ───────────────────────────────────────────────────────────────────
+# ClusterIP only — external traffic enters through the Istio IngressGateway
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 5000
+
+# ── Resource Limits ───────────────────────────────────────────────────────────
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "250m"
+    memory: "256Mi"
+
+# ── Istio Traffic Management ──────────────────────────────────────────────────
+istio:
+  gateway:
+    host: "*"                # accept requests for any hostname
+
+  virtualservice:
+    timeout: "10s"           # total request timeout
+    retries:
+      attempts: 3            # retry failed requests up to 3 times
+      perTryTimeout: "3s"    # timeout per individual attempt
+
+  destinationrule:
+    loadBalancer: ROUND_ROBIN   # options: ROUND_ROBIN | LEAST_CONN | RANDOM
+    connectionPool:
+      maxConnections: 100
+      http1MaxPendingRequests: 100
+    outlierDetection:           # circuit-breaker: eject unhealthy pods automatically
+      consecutive5xxErrors: 5
+      interval: "10s"
+      baseEjectionTime: "30s"

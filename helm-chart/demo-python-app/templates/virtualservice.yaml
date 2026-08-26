@@ -1,0 +1,22 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  hosts:
+  - {{ .Values.istio.gateway.host | quote }}
+  gateways:
+  - {{ .Release.Name }}-gateway
+  http:
+  - timeout: {{ .Values.istio.virtualservice.timeout }}
+    retries:
+      attempts: {{ .Values.istio.virtualservice.retries.attempts }}
+      perTryTimeout: {{ .Values.istio.virtualservice.retries.perTryTimeout }}
+      retryOn: "5xx,reset,connect-failure,retriable-4xx"
+    route:
+    - destination:
+        host: {{ .Release.Name }}
+        port:
+          number: {{ .Values.service.port }}
+      weight: 100

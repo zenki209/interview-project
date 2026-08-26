@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}
+    version: v1
+spec:
+  # ── ReplicaSet config ──────────────────────────────────────────────────────
+  replicas: {{ .Values.replicaSet.replicas }}
+  strategy:
+    type: {{ .Values.replicaSet.strategy.type }}
+    rollingUpdate:
+      maxSurge: {{ .Values.replicaSet.strategy.rollingUpdate.maxSurge }}
+      maxUnavailable: {{ .Values.replicaSet.strategy.rollingUpdate.maxUnavailable }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+      version: v1
+  # ── Pod template ──────────────────────────────────────────────────────────
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+        version: v1
+    spec:
+      containers:
+      - name: {{ .Release.Name }}
+        image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.service.targetPort }}
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.service.targetPort }}
+          initialDelaySeconds: 10
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.service.targetPort }}
+          initialDelaySeconds: 5
+          periodSeconds: 10

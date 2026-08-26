@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  host: {{ .Release.Name }}
+  trafficPolicy:
+    loadBalancer:
+      simple: {{ .Values.istio.destinationrule.loadBalancer }}
+    connectionPool:
+      tcp:
+        maxConnections: {{ .Values.istio.destinationrule.connectionPool.maxConnections }}
+      http:
+        http1MaxPendingRequests: {{ .Values.istio.destinationrule.connectionPool.http1MaxPendingRequests }}
+    outlierDetection:
+      consecutive5xxErrors: {{ .Values.istio.destinationrule.outlierDetection.consecutive5xxErrors }}
+      interval: {{ .Values.istio.destinationrule.outlierDetection.interval }}
+      baseEjectionTime: {{ .Values.istio.destinationrule.outlierDetection.baseEjectionTime }}

@@ -1,0 +1,14 @@
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: product-service
+  namespace: {{ .Release.Namespace }}
+spec:
+  host: product-service
+  trafficPolicy:
+    loadBalancer:
+      simple: ROUND_ROBIN
+    outlierDetection:
+      consecutive5xxErrors: {{ .Values.productService.istio.outlierDetection.consecutive5xxErrors }}
+      interval: {{ .Values.productService.istio.outlierDetection.interval }}
+      baseEjectionTime: {{ .Values.productService.istio.outlierDetection.baseEjectionTime }}

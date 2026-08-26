@@ -1,0 +1,21 @@
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: review-service
+  namespace: {{ .Release.Namespace }}
+spec:
+  host: review-service
+  trafficPolicy:
+    loadBalancer:
+      simple: ROUND_ROBIN
+    outlierDetection:
+      consecutive5xxErrors: {{ .Values.reviewService.istio.outlierDetection.consecutive5xxErrors }}
+      interval: {{ .Values.reviewService.istio.outlierDetection.interval }}
+      baseEjectionTime: {{ .Values.reviewService.istio.outlierDetection.baseEjectionTime }}
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+  - name: v2
+    labels:
+      version: v2

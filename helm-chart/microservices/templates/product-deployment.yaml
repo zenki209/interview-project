@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: product-service
+    version: v1
+spec:
+  replicas: {{ .Values.productService.replicas }}
+  selector:
+    matchLabels:
+      app: product-service
+  template:
+    metadata:
+      labels:
+        app: product-service
+        version: v1
+    spec:
+      containers:
+      - name: product-service
+        image: "{{ .Values.productService.image.name }}:{{ .Values.productService.image.tag }}"
+        imagePullPolicy: {{ .Values.productService.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.productService.port }}
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.productService.port }}
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.productService.port }}
+          initialDelaySeconds: 10
+          periodSeconds: 15

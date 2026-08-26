@@ -1,0 +1,27 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: review-service
+  namespace: {{ .Release.Namespace }}
+spec:
+  hosts:
+  - review-service
+  http:
+  - timeout: {{ .Values.reviewService.istio.timeout }}
+    retries:
+      attempts: {{ .Values.reviewService.istio.retries.attempts }}
+      perTryTimeout: {{ .Values.reviewService.istio.retries.perTryTimeout }}
+      retryOn: "5xx,reset,connect-failure"
+    route:
+    - destination:
+        host: review-service
+        subset: v1
+        port:
+          number: 80
+      weight: {{ .Values.reviewService.traffic.v1Weight }}
+    - destination:
+        host: review-service
+        subset: v2
+        port:
+          number: 80
+      weight: {{ .Values.reviewService.traffic.v2Weight }}

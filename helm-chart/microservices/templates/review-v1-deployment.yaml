@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: review-service-v1
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: review-service
+    version: v1
+spec:
+  replicas: {{ .Values.reviewService.v1.replicas }}
+  selector:
+    matchLabels:
+      app: review-service
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: review-service
+        version: v1
+    spec:
+      containers:
+      - name: review-service
+        image: "{{ .Values.reviewService.v1.image.name }}:{{ .Values.reviewService.v1.image.tag }}"
+        imagePullPolicy: {{ .Values.reviewService.v1.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.reviewService.port }}
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.reviewService.port }}
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.reviewService.port }}
+          initialDelaySeconds: 10
+          periodSeconds: 15

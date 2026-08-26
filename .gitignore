@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Helm
+*.tgz
+charts/
+
+# Temp build artifacts
+/tmp/

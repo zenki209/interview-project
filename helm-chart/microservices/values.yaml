@@ -1,0 +1,86 @@
+# ── Namespace ─────────────────────────────────────────────────────────────────
+namespace: dev
+
+# ── Frontend ──────────────────────────────────────────────────────────────────
+frontend:
+  replicas: 1
+  image:
+    name: ms-frontend
+    tag: latest
+    pullPolicy: Never
+  port: 5000
+
+# ── Product Service ───────────────────────────────────────────────────────────
+productService:
+  replicas: 1
+  image:
+    name: ms-product
+    tag: latest
+    pullPolicy: Never
+  port: 5000
+  istio:
+    timeout: "5s"
+    retries:
+      attempts: 3
+      perTryTimeout: "2s"
+    outlierDetection:
+      consecutive5xxErrors: 3
+      interval: "10s"
+      baseEjectionTime: "30s"
+
+# ── Order Service ─────────────────────────────────────────────────────────────
+orderService:
+  replicas: 1
+  image:
+    name: ms-order
+    tag: latest
+    pullPolicy: Never
+  port: 5000
+  istio:
+    timeout: "10s"
+    retries:
+      attempts: 2
+      perTryTimeout: "4s"
+    outlierDetection:
+      consecutive5xxErrors: 3
+      interval: "10s"
+      baseEjectionTime: "30s"
+
+# ── Review Service ────────────────────────────────────────────────────────────
+# v1 = no star ratings, v2 = with star ratings
+# Adjust weights to demonstrate canary / traffic splitting
+reviewService:
+  v1:
+    replicas: 1
+    image:
+      name: ms-review
+      tag: v1
+      pullPolicy: Never
+  v2:
+    replicas: 1
+    image:
+      name: ms-review
+      tag: v2
+      pullPolicy: Never
+  traffic:
+    v1Weight: 80   # % of traffic to v1
+    v2Weight: 20   # % of traffic to v2
+  port: 5000
+  istio:
+    timeout: "5s"
+    retries:
+      attempts: 2
+      perTryTimeout: "2s"
+    outlierDetection:
+      consecutive5xxErrors: 3
+      interval: "10s"
+      baseEjectionTime: "30s"
+
+# ── Shared resource defaults ──────────────────────────────────────────────────
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "250m"
+    memory: "256Mi"

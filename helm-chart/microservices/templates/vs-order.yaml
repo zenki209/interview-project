@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: order-service
+  namespace: {{ .Release.Namespace }}
+spec:
+  hosts:
+  - order-service
+  http:
+  - timeout: {{ .Values.orderService.istio.timeout }}
+    retries:
+      attempts: {{ .Values.orderService.istio.retries.attempts }}
+      perTryTimeout: {{ .Values.orderService.istio.retries.perTryTimeout }}
+      retryOn: "5xx,reset,connect-failure"
+    route:
+    - destination:
+        host: order-service
+        port:
+          number: 80
