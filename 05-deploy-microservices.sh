@@ -15,8 +15,10 @@
 #   - Full observability : Kiali graph shows all service-to-service calls
 #
 # Usage:
-#   ./05-deploy-microservices.sh
-#   ./05-deploy-microservices.sh --v1-weight 50 --v2-weight 50   # 50/50 split
+#   ./05-deploy-microservices.sh                               # deploy (80/20 split)
+#   ./05-deploy-microservices.sh --v1-weight 50 --v2-weight 50 # 50/50 canary
+#   ./05-deploy-microservices.sh --rollback                    # roll back to previous revision
+#   ./05-deploy-microservices.sh --rollback --revision 2       # roll back to specific revision
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -26,18 +28,28 @@ SERVICES_DIR="${SCRIPT_DIR}/services"
 CHART_DIR="${SCRIPT_DIR}/helm-chart/microservices"
 HELM_RELEASE_MS="microservices"
 
-# Traffic split defaults (can be overridden via flags)
+# Defaults
 V1_WEIGHT=80
 V2_WEIGHT=20
+ROLLBACK=false
+REVISION=0
 
 # ─── Argument Parsing ─────────────────────────────────────────────────────────
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --v1-weight) V1_WEIGHT="$2"; shift 2 ;;
     --v2-weight) V2_WEIGHT="$2"; shift 2 ;;
+    --rollback)  ROLLBACK=true;  shift   ;;
+    --revision)  REVISION="$2";  shift 2 ;;
     *) log_error "Unknown argument: $1"; exit 1 ;;
   esac
 done
+
+# ─── Rollback Early Exit ──────────────────────────────────────────────────────
+if [[ "${ROLLBACK}" == "true" ]]; then
+  helm_rollback "${HELM_RELEASE_MS}" "${NAMESPACE_MS}" "${REVISION}"
+  exit 0
+fi
 
 # ─── Guards ───────────────────────────────────────────────────────────────────
 check_prerequisites() {

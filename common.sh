@@ -12,6 +12,37 @@ log_section() {
   echo -e "${BLUE}════════════════════════════════════════${NC}\n"
 }
 
+# ─── Rollback ─────────────────────────────────────────────────────────────────
+# Usage: helm_rollback <release> <namespace> [revision]
+#   revision omitted → rolls back to the previous revision (Helm default)
+#   revision = 0     → same as omitted
+#   revision = N     → rolls back to exact revision N
+helm_rollback() {
+  local release="$1"
+  local namespace="$2"
+  local revision="${3:-0}"   # 0 means "previous" in Helm
+
+  log_section "Rolling Back — ${release} (namespace: ${namespace})"
+
+  # Show history before rolling back so the user can see what's happening
+  log_info "Release history:"
+  helm history "${release}" -n "${namespace}" \
+    --output table 2>/dev/null || { log_error "No history found for '${release}' in '${namespace}'."; exit 1; }
+  echo ""
+
+  if [[ "${revision}" -eq 0 ]]; then
+    log_info "Target: previous revision (no specific version given)"
+    helm rollback "${release}" -n "${namespace}" --wait --timeout 120s
+  else
+    log_info "Target: revision ${revision}"
+    helm rollback "${release}" "${revision}" -n "${namespace}" --wait --timeout 120s
+  fi
+
+  echo ""
+  log_info "Rollback complete. Current state:"
+  helm history "${release}" -n "${namespace}" --output table | tail -3
+}
+
 # ─── Shared Config ────────────────────────────────────────────────────────────
 CLUSTER_NODES=2          # 1 control-plane + 1 worker
 CPUS_PER_NODE=2

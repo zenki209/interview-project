@@ -3,8 +3,10 @@
 # Re-run any time you change app code or want to adjust values (e.g. replicas).
 #
 # Usage:
-#   ./03-deploy-app.sh                     # deploy with defaults (2 replicas)
-#   ./03-deploy-app.sh --replicas 4        # override replica count
+#   ./03-deploy-app.sh                       # deploy with defaults (2 replicas)
+#   ./03-deploy-app.sh --replicas 4          # override replica count
+#   ./03-deploy-app.sh --rollback            # roll back to the previous revision
+#   ./03-deploy-app.sh --rollback --revision 2  # roll back to a specific revision
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -12,12 +14,23 @@ source "${SCRIPT_DIR}/common.sh"
 
 # ─── Argument Parsing ─────────────────────────────────────────────────────────
 REPLICAS=2
+ROLLBACK=false
+REVISION=0
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --replicas) REPLICAS="$2"; shift 2 ;;
+    --replicas)  REPLICAS="$2";  shift 2 ;;
+    --rollback)  ROLLBACK=true;  shift   ;;
+    --revision)  REVISION="$2";  shift 2 ;;
     *) log_error "Unknown argument: $1"; exit 1 ;;
   esac
 done
+
+# ─── Rollback Early Exit ──────────────────────────────────────────────────────
+if [[ "${ROLLBACK}" == "true" ]]; then
+  helm_rollback "${HELM_RELEASE}" "${NAMESPACE_DEMO}" "${REVISION}"
+  exit 0
+fi
 
 # ─── Guards ───────────────────────────────────────────────────────────────────
 check_prerequisites() {
