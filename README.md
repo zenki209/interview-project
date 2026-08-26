@@ -244,8 +244,10 @@ Both namespaces are ready for deployment after this step.
 Builds the standalone Flask demo image and deploys it into the `dev-python-demo` namespace via Helm.
 
 ```bash
-./03-deploy-app.sh                # 2 replicas (default)
-./03-deploy-app.sh --replicas 4   # scale up
+./03-deploy-app.sh                       # 2 replicas (default)
+./03-deploy-app.sh --replicas 4          # scale up
+./03-deploy-app.sh --rollback            # roll back to previous revision
+./03-deploy-app.sh --rollback --revision 1  # roll back to specific revision
 ```
 
 ```
@@ -281,8 +283,10 @@ Kiali is patched to `NodePort` for direct browser access. The other tools use `k
 Builds all five Docker images, loads them into every minikube node, and deploys via Helm into `dev-microservices`.
 
 ```bash
-./05-deploy-microservices.sh                               # default 80/20 split
-./05-deploy-microservices.sh --v1-weight 50 --v2-weight 50 # 50/50 canary
+./05-deploy-microservices.sh                                  # default 80/20 split
+./05-deploy-microservices.sh --v1-weight 50 --v2-weight 50    # 50/50 canary
+./05-deploy-microservices.sh --rollback                       # roll back to previous revision
+./05-deploy-microservices.sh --rollback --revision 2          # roll back to specific revision
 ```
 
 ```
@@ -468,6 +472,47 @@ helm upgrade microservices ./helm-chart/microservices -n dev-microservices \
   --set reviewService.traffic.v2Weight=100
 ```
 
+### Rollback
+
+Both deploy scripts have a built-in `--rollback` flag backed by the `helm_rollback()` function in `common.sh`. Before rolling back, it always prints the full release history so you can confirm the target state. It then blocks with `--wait` until all pods are healthy before returning.
+
+**How it works:**
+
+Every `helm upgrade` creates a new numbered revision. Helm stores the full history, so you can jump back to any previous revision at any time.
+
+```
+REVISION   STATUS      DESCRIPTION
+1          superseded  Install complete        ← initial deploy
+2          superseded  Upgrade complete        ← e.g. traffic split change
+3          deployed    Rollback to 1           ← rolled back
+```
+
+**Usage:**
+
+```bash
+# Roll back to the previous revision (one step back — no revision number needed)
+./03-deploy-app.sh --rollback
+./05-deploy-microservices.sh --rollback
+
+# Roll back to a specific revision number
+./03-deploy-app.sh --rollback --revision 1
+./05-deploy-microservices.sh --rollback --revision 2
+```
+
+**View revision history before rolling back:**
+
+```bash
+helm history demo-python-app -n dev-python-demo
+helm history microservices   -n dev-microservices
+```
+
+**Direct Helm rollback (bypasses the script):**
+
+```bash
+helm rollback demo-python-app   -n dev-python-demo    # previous revision
+helm rollback microservices 2   -n dev-microservices  # specific revision
+```
+
 ### Helm Release Management
 
 ```bash
@@ -475,10 +520,9 @@ helm upgrade microservices ./helm-chart/microservices -n dev-microservices \
 helm list -n dev-python-demo
 helm list -n dev-microservices
 
-# Revision history and rollback
-helm history microservices -n dev-microservices
-helm rollback microservices -n dev-microservices       # one revision back
-helm rollback microservices 1 -n dev-microservices     # specific revision
+# Full revision history
+helm history demo-python-app -n dev-python-demo
+helm history microservices   -n dev-microservices
 ```
 
 ### Debugging
