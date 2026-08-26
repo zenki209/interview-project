@@ -9,33 +9,33 @@ Two independent applications are deployed in **separate namespaces** on the same
 ## Architecture
 
 ```
-                     ┌──────────────────────────────────────────────────┐
+                     ┌───────────────────────────────────────────────────┐
                      │                Kubernetes Cluster                 │
-                     │                                                    │
+                     │                                                   │
   Browser            │  ┌─────────────────────────────────────────────┐  │
-     │               │  │             istio-system namespace           │  │
-     ▼               │  │  istiod  ·  ingressgateway (NodePort)        │  │
-  NodePort           │  │  Kiali   ·  Prometheus  ·  Grafana  ·  Jaeger│  │
+     │               │  │             istio-system namespace          │  │
+     ▼               │  │  istiod  ·  ingressgateway (NodePort)       │  │
+  NodePort           │  │  Kiali   ·  Prometheus  ·Grafana  ·Jaeger   │  |
      │               │  └─────────────────────────────────────────────┘  │
-     ▼               │                         │                          │
-  Istio              │          ┌──────────────┴──────────────┐           │
-  IngressGateway     │          │  path-based routing          │           │
-     │               │          ▼                             ▼           │
+     ▼               │                         │                         │
+  Istio              │          ┌──────────────┴──────────────┐          │
+  IngressGateway     │          │  path-based routing         │          │
+     │               │          ▼                             ▼          │
      │               │  ┌──────────────────┐  ┌───────────────────────┐  │
      │               │  │ dev-python-demo  │  │  dev-microservices    │  │
      │               │  │                  │  │                       │  │
      ├── /demo ────► │  │  demo-python-app │  │  frontend             │  │
      │               │  │  [Flask + Envoy] │  │    ├── product-svc    │  │
-     └── / ───────► │  │                  │  │    ├── order-svc       │  │
-                     │  │                  │  │    │     └── product   │  │
+     └── / ───────►  │  │                  │  │    ├── order-svc      │  │
+                     │  │                  │  │    │     └── product  │  │
                      │  └──────────────────┘  │    └── review-svc     │  │
                      │                        │          ├── v1 (80%) │  │
                      │                        │          └── v2 (20%) │  │
                      │                        └───────────────────────┘  │
-                     │                                                    │
-                     │  Node 1: minikube (control-plane)                  │
-                     │  Node 2: minikube-m02 (worker)                     │
-                     └──────────────────────────────────────────────────┘
+                     │                                                   │
+                     │  Node 1: minikube (control-plane)                 │
+                     │  Node 2: minikube-m02 (worker)                    │
+                     └───────────────────────────────────────────────────┘
 ```
 
 ### Namespace Separation
